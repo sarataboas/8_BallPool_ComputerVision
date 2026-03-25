@@ -1,1 +1,3 @@
-# added libraries
+opencv
+matplotlib
+numpy
