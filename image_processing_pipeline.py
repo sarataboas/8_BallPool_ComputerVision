@@ -665,7 +665,6 @@ def main():
         image_info['balls'] = balls
         output_results.append(image_info)
 
-    # print(output_results)
     print(len(output_results))
     # save_output_json(data=output_results, output_file=OUTPUT_FILE)
         
