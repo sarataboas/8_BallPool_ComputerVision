@@ -1,4 +1,3 @@
-# Imports
 import os
 from pathlib import Path
 import json
@@ -11,8 +10,7 @@ import numpy as np
 # ----------- CONFIGS --> all directories and variables used in the script -----------
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-DEVELOPMENT_SET = 'development_set/'
-INPUT_FILE = 'example_json/input.json'
+INPUT_FILE = 'example_json/input.json' 
 TOPVIEW_RESULTS = 'results/topview_images/'
 OUTPUT_FILE = 'results/output.json'
 
@@ -38,46 +36,36 @@ STRIPE_MAP = {
     15: 7,   # brown stripe
 }
 
-
-
 # Logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(levelname)s | %(message)s"
 )
 
-# ------------- SCHEMAS --> define the input and output format --------------
+# -------------------- Utility Functions -------------------------
 def load_input_paths(input_json):
-    '''
+    """
     Loads the image paths in the input JSON file.
     Returns a list of Path objects. 
-    '''
+    """
     with open(input_json, "r", encoding="utf-8") as f:
         data = json.load(f)
     paths = data.get("image_path") or data.get("image_paths") or []
     return [PROJECT_ROOT / Path(p) for p in paths]
 
-def imread_rgb(path):
-    ''' 
-    Reads an image from `path` and converts it to RGB format (because openCV uses BGR by default) 
-    '''
-    img = cv2.imread(str(path))
-    if img is None:
-        raise FileNotFoundError(f"Could not read image: {path}")
-    return cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
 def imread_bgr(path):
-    ''' 
-    Reads an image from `path` in the default openCV format (BGR)
-    '''
+    """Reads an image from `path` in the default openCV format (BGR)"""
+
     img = cv2.imread(str(path))
     if img is None:
         raise FileNotFoundError(f"Could not read image: {path}")
     return img
 
-def save_warped_image(image, original_path, output_dir):
-    '''Saves the warped image'''
 
+def save_warped_image(image, original_path, output_dir):
+    """Saves the warped image"""
+    
     output_dir = PROJECT_ROOT / Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -93,9 +81,8 @@ def save_warped_image(image, original_path, output_dir):
 
 
 def save_output_json(data, output_file):
-    '''
-    Saves the output results into a JSON file
-    '''
+    """Saves the output results into a JSON file"""
+
     output_path = PROJECT_ROOT / Path(output_file)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -105,7 +92,10 @@ def save_output_json(data, output_file):
     logging.info(f"Output saved to: {output_path}")
 
 # -------------------- Table Mask Detection -------------------------
+
 def detect_table_mask_adaptive(bgr):
+    """Detects the table mask by adaptively estimating the cloth colour from the image center."""
+
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
     h, w = hsv.shape[:2]
 
@@ -139,9 +129,8 @@ def detect_table_mask_adaptive(bgr):
 
 
 def extract_main_table_component(mask):
-    ''' 
-    Given a mask, extract the largest connected component closest to the image center
-    '''
+    """ Given a mask, extract the largest connected component closest to the image center"""
+
     if mask is None:
         return None
 
@@ -168,9 +157,8 @@ def extract_main_table_component(mask):
 # -------------------------- Table Contour ---------------------------
 
 def extract_table_contour(component_mask):
-    '''
-    Receives a binary mask of the main component and extracts its contour
-    '''
+    """Receives a binary mask of the main component and extracts its contour"""
+
     if component_mask is None:
         return None
 
@@ -186,6 +174,7 @@ def extract_table_contour(component_mask):
 # -------------------------- Table Corners ---------------------------
 
 def order_points(pts):
+    """Orders 4 points in the order: top-left, top-right, bottom-right, bottom-left."""
     pts = np.array(pts, dtype=np.float32)
 
     y_sorted = pts[np.argsort(pts[:, 1])] # sort by y-coordinate to separate top and bottom points
@@ -199,12 +188,15 @@ def order_points(pts):
     return ordered
 
 def polygon_area(pts):
+    """Fall back function: computes the area of a polygon given its vertices -> used in case of contour approximation failure, to filter out small contours"""
     pts = np.asarray(pts, dtype=np.float32)
     x = pts[:, 0]
     y = pts[:, 1]
     return 0.5 * abs(np.dot(x, np.roll(y, -1)) - np.dot(y, np.roll(x, -1)))
 
 def contour_to_corners_refined(contour):
+    """Refined contour to corners: tries multiple approximation thresholds, falls back to minAreaRect if no quadrilateral found, and filters out small contours."""
+    
     if contour is None:
         return None
 
@@ -234,6 +226,7 @@ def contour_to_corners_refined(contour):
 
 def expand_corners(corners, expand_px=20):
     """Push corners outward so rails/balls at edges aren't clipped."""
+    
     cx = np.mean(corners[:, 0])
     cy = np.mean(corners[:, 1])
     expanded = []
@@ -246,6 +239,8 @@ def expand_corners(corners, expand_px=20):
     return np.array(expanded, dtype=np.float32)
 
 def warp_table(bgr, corners):
+    """Warps the image to a top-down view of the table using the detected corners."""
+
     pts = order_points(corners)
     pts_expanded = expand_corners(pts, expand_px=25)  # checked - Necessary ? 
 
@@ -290,16 +285,12 @@ def get_ball_mask_original(bgr, contour):
     """
     h, w = bgr.shape[:2]
 
-    # --- Step 2: Build validity mask from table contour ---
-    # Fill the table polygon — everything outside is excluded
     valid_region = np.zeros((h, w), dtype=np.uint8)
     cv2.fillPoly(valid_region, [contour], 255)
 
-    # Erode slightly inward to exclude rails and pocket edges
     erode_k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
     valid_region = cv2.erode(valid_region, erode_k, iterations=1)
 
-    # --- Step 3: Estimate cloth colour from center of valid region ---
     hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
 
     cx1, cy1 = int(w * 0.3), int(h * 0.3)
@@ -318,7 +309,6 @@ def get_ball_mask_original(bgr, contour):
     s_med = int(np.median(s_vals[valid]))
     v_med = int(np.median(v_vals[valid]))
 
-    # --- Step 4: Compute per-pixel deviation from cloth colour ---
     H = hsv[:, :, 0].astype(np.int16)
     S = hsv[:, :, 1].astype(np.int16)
     V = hsv[:, :, 2].astype(np.int16)
@@ -330,23 +320,17 @@ def get_ball_mask_original(bgr, contour):
 
     is_cloth = (h_diff < 20) & (s_diff < 35) & (v_diff < 35)
 
-    # --- Step 5: Ball mask = NOT cloth, restricted to table region ---
     ball_mask = (~is_cloth).astype(np.uint8) * 255
     ball_mask = cv2.bitwise_and(ball_mask, valid_region)
 
-    # --- Step 6: Morphological cleanup ---
     k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
     ball_mask = cv2.morphologyEx(ball_mask, cv2.MORPH_OPEN, k)
     ball_mask = cv2.morphologyEx(ball_mask, cv2.MORPH_CLOSE, k)
 
     return ball_mask
 
-
 def extract_ball_bboxes_watershed(ball_mask, bgr):
-    """
-    Same as before + post-processing to remove pocket detections
-    using brightness filtering (HSV V channel).
-    """
+    """Extracts ball bounding boxes from the ball mask using watershed segmentation: thresholding, distance transform, and shape filtering to find circular blobs corresponding to balls."""
 
     if ball_mask is None:
         return []
@@ -461,15 +445,7 @@ def extract_ball_bboxes_watershed(ball_mask, bgr):
 
 # ---------------------- Ball Classification ---------------------------
 def is_white_pixel(hsv_pixel, sat_thr=40, val_thr=180):
-    """
-    Returns True if a pixel is considered white/light.
-    White pixels have low saturation and high value.
-
-    Args:
-        hsv_pixel: array of (H, S, V) values
-        sat_thr: maximum saturation to be considered white
-        val_thr: minimum value (brightness) to be considered white
-    """
+    """Returns True if the HSV pixel is likely to be white/light, based on low saturation and high value."""
     return hsv_pixel[1] < sat_thr and hsv_pixel[2] > val_thr
 
 
@@ -477,13 +453,6 @@ def get_white_fraction(ball_region_hsv, ball_region_mask):
     """
     Computes the fraction of ball pixels that are white/light.
     Used to distinguish: cue ball (>70%), stripes (>25%), solids (<25%).
-
-    Args:
-        ball_region_hsv: HSV crop of the bounding box
-        ball_region_mask: binary mask of the ball pixels within the crop
-
-    Returns:
-        Float between 0 and 1.
     """
     ball_pixels = ball_region_hsv[ball_region_mask > 0]
     if len(ball_pixels) == 0:
@@ -499,13 +468,6 @@ def get_dominant_colour(ball_region_hsv, ball_region_mask):
     """
     Returns the median hue and saturation of the non-white ball pixels.
     White pixels (reflexos, stripes) are excluded to get the true ball colour.
-
-    Args:
-        ball_region_hsv: HSV crop of the bounding box
-        ball_region_mask: binary mask of the ball pixels within the crop
-
-    Returns:
-        (median_hue, median_sat, median_val) or None if no valid pixels
     """
     ball_pixels = ball_region_hsv[ball_region_mask > 0]
     if len(ball_pixels) == 0:
@@ -528,12 +490,6 @@ def match_colour_to_ball(median_hsv):
     """
     Matches a median HSV colour to the closest solid ball number (1-8).
     The black ball (8) is matched by low value rather than hue.
-
-    Args:
-        median_hsv: (h, s, v) tuple from get_dominant_colour()
-
-    Returns:
-        Ball number (1-8), or None if no match found.
     """
     if median_hsv is None:
         return None
@@ -556,20 +512,6 @@ def match_colour_to_ball(median_hsv):
 def classify_ball(det, bgr, ball_mask):
     """
     Classifies a detected ball by analysing its colour and white fraction.
-
-    Steps:
-      1. Extract the bounding box region from the image and mask
-      2. Compute white fraction to distinguish cue ball / stripe / solid
-      3. Get dominant colour of non-white pixels
-      4. Match colour to ball number
-
-    Args:
-        det: detection dict with 'x1', 'y1', 'x2', 'y2'
-        bgr: original BGR image
-        ball_mask: binary mask from get_ball_mask_original()
-
-    Returns:
-        Ball number (0-15), or None if classification failed.
     """
     x1, y1, x2, y2 = det['x1'], det['y1'], det['x2'], det['y2']
 
@@ -636,7 +578,7 @@ def main():
             logging.warning(f"Skipping {path}, no corners detected")
             continue
         warped_image, _ = warp_table(bgr=img_bgr, corners=corners)
-        # save_warped_image(image=warped_image, original_path=path, output_dir=TOPVIEW_RESULTS)
+        save_warped_image(image=warped_image, original_path=path, output_dir=TOPVIEW_RESULTS)
         
 
         ball_mask = get_ball_mask_original(bgr=img_bgr, contour=contour)
@@ -653,7 +595,7 @@ def main():
             xmax = float(detected_ball['x2']) / w
             ymin = float(detected_ball['y1']) / h
             ymax = float(detected_ball['y2']) / h
-            # write in a dictionary: 
+            # write in the results dictionary
             ball_info = {
                 "number": ball_id,
                 "xmin": xmin,
@@ -666,7 +608,7 @@ def main():
         output_results.append(image_info)
 
     print(len(output_results))
-    # save_output_json(data=output_results, output_file=OUTPUT_FILE)
+    save_output_json(data=output_results, output_file=OUTPUT_FILE)
         
 
 
