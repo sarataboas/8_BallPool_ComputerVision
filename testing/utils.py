@@ -136,3 +136,121 @@ def load_output_example(output_json):
     '''
     with open(output_json, "r", encoding="utf-8") as f:
         return json.load(f)
+    
+
+
+
+
+########################## Functions for the hyperparameter tuning script ##########################
+
+
+def detect_table_mask_adaptive(bgr):
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+    h, w = hsv.shape[:2]
+
+    cx1, cy1 = int(w * 0.35), int(h * 0.35)
+    cx2, cy2 = int(w * 0.65), int(h * 0.65)
+    center = hsv[cy1:cy2, cx1:cx2]
+
+    h_vals = center[:, :, 0].reshape(-1)
+    s_vals = center[:, :, 1].reshape(-1)
+    v_vals = center[:, :, 2].reshape(-1)
+
+    valid = (s_vals > 50) & (v_vals > 50)
+    if valid.sum() < 50:
+        return None
+
+    h_med = int(np.median(h_vals[valid]))
+    low = max(0, h_med - 18)
+    high = min(179, h_med + 18)
+
+    mask = cv2.inRange(hsv, np.array([low, 70, 70]), np.array([high, 255, 255]))
+
+    # remove likely noise bands
+    mask[:int(0.2 * h), :] = 0
+    mask[int(0.9 * h):, :] = 0
+
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+
+    return mask
+
+
+
+
+def extract_main_table_component(mask):
+    ''' 
+    Given a mask, extract the largest connected component closest to the image center
+    '''
+    if mask is None:
+        return None
+
+    h, w = mask.shape[:2]
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(mask)
+
+    if num_labels <= 1:
+        return None
+
+    center_pt = np.array([w / 2, h / 2])
+    best_label = None
+    best_dist = float("inf")
+
+    for i in range(1, num_labels):
+        c = centroids[i]
+        dist = np.linalg.norm(c - center_pt)
+        if dist < best_dist:
+            best_dist = dist
+            best_label = i
+
+    component_mask = np.uint8(labels == best_label) * 255
+    return component_mask
+
+
+
+
+def extract_table_contour(component_mask):
+    '''
+    Receives a binary mask of the main component and extracts its contour
+    '''
+    if component_mask is None:
+        return None
+
+    contours, _ = cv2.findContours(component_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours:
+        return None
+
+    contour = max(contours, key=cv2.contourArea)
+    contour = cv2.convexHull(contour)
+    return contour
+
+
+
+
+
+def contour_to_corners_refined(contour):
+    if contour is None:
+        return None
+
+    peri = cv2.arcLength(contour, True)
+    print("Contour perimeter:", peri)
+
+    approx = None
+    for eps in [0.01, 0.02, 0.03]:
+        approx_candidate = cv2.approxPolyDP(contour, eps * peri, True)
+        if len(approx_candidate) == 4:
+            approx = approx_candidate
+            break
+
+    if approx is not None:
+        corners = approx.reshape(4, 2)
+    else:
+        rect = cv2.minAreaRect(contour)
+        corners = cv2.boxPoints(rect)
+
+    corners = order_points(corners)
+
+    if polygon_area(corners) < 1000:
+        return None
+
+    return corners
