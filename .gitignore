@@ -43,5 +43,9 @@ venv.bak/
 development_set/
 example_json/
 
+# Dataset
+8-Ball Pool.v3i.yolov11/*
+
+
 # Results 
 results/*
