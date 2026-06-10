@@ -1,3 +1,6 @@
 matplotlib
 numpy
 opencv-python
+# Task 2 & 3
+torch
+torchvision

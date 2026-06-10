@@ -1,0 +1,1 @@
+name,backbone,head,input_size,lr,epochs,batch_size,augment,crop_table,val_mae,val_acc,val_off1,test_mae,test_acc,test_off1

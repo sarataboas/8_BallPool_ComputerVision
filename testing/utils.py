@@ -13,7 +13,7 @@ from config import PROJECT_ROOT
 plt.rcParams["figure.figsize"] = (10, 6)
 
 
-######################## Utility helper functions ########################
+######################## Utility helper functions (shared: Task 1 + Task 2) ########################
 
 def imread_rgb(path):
     ''' 
@@ -68,6 +68,8 @@ def show_many(images, titles=None, cols=3, figsize=(16, 10)):
     plt.tight_layout()
     plt.show()
 
+######################## Utility helper functions (Task 1 only) ########################
+
 def draw_boxes_rgb(img_rgb, boxes, labels=None, color=(255, 0, 0), thickness=2):
     '''
     Draws a bounding box on a RGB images.
@@ -118,7 +120,7 @@ def denormalize_output_box(box, img_w, img_h):
 
 
 
-######################## Load image list and optional ground truth ########################
+######################## Load image list and optional ground truth (Task 1 only) ########################
 
 def load_input_paths(input_json):
     '''
@@ -141,7 +143,7 @@ def load_output_example(output_json):
 
 
 
-########################## Functions for the hyperparameter tuning script ##########################
+########################## Table detection helpers (Task 1 only) ##########################
 
 
 def detect_table_mask_adaptive(bgr):
