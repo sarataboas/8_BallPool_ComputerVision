@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-from config import PROJECT_ROOT  
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 plt.rcParams["figure.figsize"] = (10, 6)
 
@@ -130,7 +130,7 @@ def load_input_paths(input_json):
     with open(input_json, "r", encoding="utf-8") as f:
         data = json.load(f)
     paths = data.get("image_path") or data.get("image_paths") or []
-    return [PROJECT_ROOT / Path(p) for p in paths]
+    return [_PROJECT_ROOT / Path(p) for p in paths]
 
 def load_output_example(output_json):
     ''' 

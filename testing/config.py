@@ -24,10 +24,14 @@ DEFAULT_CFG = {
     "backbone":    "resnet18",
     "head":        "regression",   # "regression" | "classification"
     "input_size":  384,
+    "loss":        "smooth_l1",    # "smooth_l1" | "l1"
+    "optimizer":   "adam",
     "lr":          1e-4,
-    "epochs":      30,
+    "lr_patience": 7,
+    "epochs":      40,
     "batch_size":  16,
-    "augment":     False,
-    "crop_table":  False,          # full-frame vs table-crop ablation
+    "augment":     "none",         # "none" | "light" | "heavy"
+    "crop_table":  False,
+    "seed":        42,
     "weights_dir": str(MODELS_DIR),
 }

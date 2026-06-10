@@ -1,1 +1,2 @@
 name,backbone,head,input_size,lr,epochs,batch_size,augment,crop_table,val_mae,val_acc,val_off1,test_mae,test_acc,test_off1
+resnet18_reg,resnet18,regression,384,smooth_l1,adam,0.0001,7,40,16,light,False,0.9583,0.4167,0.7083,1.0833,0.375,0.75
