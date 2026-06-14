@@ -25,7 +25,7 @@ Stratification is by ball count. Groups with fewer than 5 images stay entirely i
 
 **Goal**: detect balls, identify their numbers, and produce a top-view of the table.
 **Deliverable**: `image_processing_pipeline.py` (single file, OpenCV only)
-**Dev notebooks**: `testing/task1.ipynb`, `testing/evaluation.ipynb`
+**Dev notebooks**: `testing/task1/task1.ipynb`, `testing/task1/evaluation.ipynb`
 **Data**: `development_set/` (50 images), `data/ground_truth.csv`
 
 Input/output JSON format defined in `example_json/`.

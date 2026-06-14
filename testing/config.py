@@ -15,7 +15,7 @@ TRAIN_DIR      = DATASET_DIR / "train"
 VALID_DIR      = DATASET_DIR / "valid"
 TEST_DIR       = DATASET_DIR / "test"
 DATA_YAML      = DATASET_DIR / "data.yaml"
-MODELS_DIR      = PROJECT_ROOT / "models"
+MODELS_DIR      = PROJECT_ROOT / "models" / "cnn"
 EXPERIMENTS_DIR = PROJECT_ROOT / "testing" / "experiments"
 
 # Task 2 — default experiment config (override per run)

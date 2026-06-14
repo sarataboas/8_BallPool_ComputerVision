@@ -47,7 +47,7 @@ example_json/
 8-Ball Pool.v3i.yolov11/*
 
 # Model weights
-models/*.pth
+models/cnn/*.pth
 
 # Results
 results/*
