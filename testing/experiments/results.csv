@@ -1,2 +1,5 @@
 name,backbone,head,input_size,lr,epochs,batch_size,augment,crop_table,val_mae,val_acc,val_off1,test_mae,test_acc,test_off1
 resnet18_reg,resnet18,regression,384,smooth_l1,adam,0.0001,7,40,16,light,False,0.9583,0.4167,0.7083,1.0833,0.375,0.75
+scratch_reg,scratch,regression,224,smooth_l1,adam,0.001,7,40,16,light,False,2.0,0.0833,0.4167,1.8333,0.125,0.5833
+resnet18_nopretrain,resnet18_nopretrain,regression,384,smooth_l1,adam,0.001,7,40,16,light,False,2.5833,0.0417,0.4167,2.5417,0.0833,0.3333
+resnet34_reg,resnet34,regression,384,smooth_l1,adam,0.0001,7,40,16,light,False,0.8333,0.5,0.7083,1.1667,0.3333,0.7083

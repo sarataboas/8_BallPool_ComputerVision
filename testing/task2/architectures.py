@@ -44,13 +44,18 @@ def get_model(backbone: str, head: str, num_classes: int = 17) -> nn.Module:
     Factory that returns a model for a given backbone and head type.
 
     Args:
-        backbone:    "resnet18" | "resnet34" | "scratch"
+        backbone:    "resnet18" | "resnet18_nopretrain" | "resnet34" | "scratch"
         head:        "regression"      → single float output
                      "classification"  → num_classes outputs (counts 0-16)
         num_classes: number of output classes (used only when head="classification")
     """
     if backbone == "resnet18":
         base        = tv_models.resnet18(weights=tv_models.ResNet18_Weights.IMAGENET1K_V1)
+        features    = nn.Sequential(*list(base.children())[:-1])   # (B, 512, 1, 1)
+        in_features = 512
+        dropout     = 0.2
+    elif backbone == "resnet18_nopretrain":
+        base        = tv_models.resnet18(weights=None)
         features    = nn.Sequential(*list(base.children())[:-1])   # (B, 512, 1, 1)
         in_features = 512
         dropout     = 0.2
