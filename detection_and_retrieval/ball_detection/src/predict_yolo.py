@@ -35,7 +35,7 @@ def predict_single_image(detector: BallDetector, image_path: Path, output_dir: P
     # Save image with predicted bounding boxes
     prediction_image_path = detector.save_prediction_image(
         image_path=str(image_path),
-        output_dir=str(output_dir)
+        output_dir=str(output_dir),
     )
 
     result["prediction_image"] = str(prediction_image_path)
@@ -73,33 +73,35 @@ def main():
         "--source",
         type=str,
         required=True,
-        help="Path to an image or to a folder containing images."
+        help="Path to an image or to a folder containing images.",
     )
 
     parser.add_argument(
         "--model",
         type=str,
         default=None,
-        help="Path to trained YOLO model. If not provided, uses weights/best.pt from config.yaml."
+        help="Path to trained YOLO model. If not provided, uses weights/best.pt from config.yaml.",
     )
 
     parser.add_argument(
         "--output-dir",
         type=str,
         default="outputs/predictions",
-        help="Directory where prediction images will be saved."
+        help="Directory where prediction images will be saved.",
     )
 
     parser.add_argument(
         "--json-output",
         type=str,
         default="outputs/predictions/predictions.json",
-        help="Path where JSON results will be saved."
+        help="Path where JSON results will be saved.",
     )
 
     args = parser.parse_args()
 
-    current_dir = Path(__file__).resolve().parent
+    # This script is inside ball_detection/src
+    # parents[1] points to ball_detection/
+    current_dir = Path(__file__).resolve().parents[1]
 
     source_path = Path(args.source)
     if not source_path.is_absolute():
@@ -117,6 +119,7 @@ def main():
         model_path = Path(args.model)
         if not model_path.is_absolute():
             model_path = current_dir / model_path
+
         detector = BallDetector(model_path=str(model_path))
     else:
         detector = BallDetector()

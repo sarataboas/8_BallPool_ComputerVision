@@ -80,7 +80,7 @@ def main():
         "--model",
         type=str,
         default=None,
-        help="Path to trained YOLO model. If not provided, uses trained_model from config.yaml."
+        help="Path to trained YOLO model. If not provided, uses trained_model from config.yaml.",
     )
 
     parser.add_argument(
@@ -88,21 +88,23 @@ def main():
         type=str,
         default="test",
         choices=["val", "test"],
-        help="Dataset split to evaluate on: val or test."
+        help="Dataset split to evaluate on: val or test.",
     )
 
     parser.add_argument(
         "--output",
         type=str,
         default=None,
-        help="Path to save evaluation metrics JSON."
+        help="Path to save evaluation metrics JSON.",
     )
 
     args = parser.parse_args()
 
-    current_dir = Path(__file__).resolve().parent
+    # This script is inside ball_detection/src
+    # parents[1] points to ball_detection/
+    current_dir = Path(__file__).resolve().parents[1]
 
-    config_path = current_dir / "config.yaml"
+    config_path = current_dir / "configs" / "config.yaml"
     config = load_config(config_path)
 
     dataset_yaml = current_dir / config["dataset_yaml"]

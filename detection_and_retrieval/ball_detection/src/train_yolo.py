@@ -19,11 +19,12 @@ def load_config(config_path: Path) -> dict:
 
 
 def main():
-    # Folder where this script is located
-    current_dir = Path(__file__).resolve().parent
+    # This script is inside ball_detection/src
+    # parents[1] points to ball_detection/
+    current_dir = Path(__file__).resolve().parents[1]
 
     # Load config.yaml
-    config_path = current_dir / "config.yaml"
+    config_path = current_dir / "configs" / "config.yaml"
     config = load_config(config_path)
 
     # Paths from config
@@ -59,7 +60,7 @@ def main():
         name=experiment_name,
         device=device,
         workers=0,
-        exist_ok=True
+        exist_ok=True,
     )
 
     # Path where YOLO saves the training run

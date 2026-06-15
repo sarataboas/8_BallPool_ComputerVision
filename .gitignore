@@ -51,4 +51,15 @@ data/8-Ball Pool.v3i.yolov11/*
 models/cnn/*.pth
 
 # Results
-results/*
+results/*runs/
+
+# YOLO / Ultralytics training outputs
+**/runs/
+
+# Local YOLO downloaded base models
+**/yolo11n.pt
+**/yolo11s.pt
+**/yolo11m.pt
+**/yolo11l.pt
+**/yolo11x.pt
+

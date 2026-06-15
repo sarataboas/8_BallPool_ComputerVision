@@ -34,13 +34,17 @@ class BallDetector:
         model_path: Optional[str] = None,
         config_path: Optional[str] = None,
     ):
-        current_dir = Path(__file__).resolve().parent
+        # This script is inside ball_detection/src
+        # parents[1] points to ball_detection/
+        current_dir = Path(__file__).resolve().parents[1]
 
         # Load config
         if config_path is None:
-            config_path = current_dir / "config.yaml"
+            config_path = current_dir / "configs" / "config.yaml"
         else:
             config_path = Path(config_path)
+            if not config_path.is_absolute():
+                config_path = current_dir / config_path
 
         self.config = load_config(config_path)
 
@@ -49,6 +53,8 @@ class BallDetector:
             model_path = current_dir / self.config["trained_model"]
         else:
             model_path = Path(model_path)
+            if not model_path.is_absolute():
+                model_path = current_dir / model_path
 
         if not model_path.exists():
             raise FileNotFoundError(
@@ -119,7 +125,7 @@ class BallDetector:
         image_extensions = [".jpg", ".jpeg", ".png", ".bmp"]
         image_paths = [
             path for path in folder_path.iterdir()
-            if path.suffix.lower() in image_extensions
+            if path.is_file() and path.suffix.lower() in image_extensions
         ]
 
         all_results = []
@@ -138,6 +144,7 @@ class BallDetector:
         ----------
         image_path : str
             Path to input image.
+
         output_dir : str
             Directory where the prediction image will be saved.
 
@@ -163,7 +170,6 @@ class BallDetector:
 
         output_path = output_dir / f"{image_path.stem}_pred.jpg"
 
-        # OpenCV uses BGR format, and result.plot() already returns an image compatible with cv2.imwrite
         import cv2
         cv2.imwrite(str(output_path), plotted_image)
 
@@ -204,14 +210,8 @@ class BallDetector:
 
 
 if __name__ == "__main__":
-    """
-    Example usage.
-
-    This will only work after training the model and saving weights/best.pt.
-    """
     detector = BallDetector()
 
-    example_image = "../../data/8-Ball Pool.v3i.yolov11/test/images"
     print(
         "BallDetector is ready.\n"
         "Use detector.detect_image(image_path) for one image or "

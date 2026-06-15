@@ -1,4 +1,4 @@
-dataset_yaml: "data_local.yaml"
+dataset_yaml: "configs/data_local.yaml"
 
 base_model: "yolo11n.pt"
 
