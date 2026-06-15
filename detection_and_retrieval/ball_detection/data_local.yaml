@@ -1,0 +1,13 @@
+path: ../../data/8-Ball Pool.v3i.yolov11
+
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 5
+names:
+  - Black
+  - Cue
+  - Dot
+  - Solid
+  - Striped

@@ -45,6 +45,7 @@ example_json/
 
 # Dataset
 8-Ball Pool.v3i.yolov11/*
+data/8-Ball Pool.v3i.yolov11/*
 
 # Model weights
 models/cnn/*.pth
