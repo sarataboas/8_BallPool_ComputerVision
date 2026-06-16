@@ -46,9 +46,11 @@ example_json/
 # Dataset
 8-Ball Pool.v3i.yolov11/*
 data/8-Ball Pool.v3i.yolov11/*
+data/8-Ball Pool.v3i.yolov11_no_dot/*
 
 # Model weights
 models/cnn/*.pth
+detection_and_retrieval/ball_detection/models/
 
 # Results
 results/*runs/
