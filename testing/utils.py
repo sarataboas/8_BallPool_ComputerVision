@@ -68,6 +68,121 @@ def show_many(images, titles=None, cols=3, figsize=(16, 10)):
     plt.tight_layout()
     plt.show()
 
+######################## Utility helper functions (Task 2 only) ########################
+
+def find_dataset_root(base):
+    """Finds the nested dataset root that contains data.yaml (Roboflow datasets extract into a named subfolder)."""
+    from pathlib import Path
+    base = Path(base)
+    if (base / 'data.yaml').exists():
+        return base
+    for sub in sorted(base.iterdir()):
+        if sub.is_dir() and (sub / 'data.yaml').exists():
+            return sub
+    raise FileNotFoundError(f"No data.yaml found under {base}")
+
+
+def count_ext_labels(label_path, class_map):
+    """Counts ball annotations in a YOLO label file using a class_map dict (class_id → 'ball'|'cue')."""
+    from pathlib import Path
+    label_path = Path(label_path)
+    if not label_path.exists():
+        return -1
+    return sum(
+        1 for ln in label_path.read_text().splitlines()
+        if ln.strip() and class_map.get(int(ln.split()[0]), 'ball') == 'ball'
+    )
+
+
+def cloth_center_hue(bgr):
+    """Returns the median HSV hue of the cloth region at the image center. Returns -1 if the region is too dark/unsaturated."""
+    hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+    h, w = hsv.shape[:2]
+    center = hsv[int(h*0.35):int(h*0.65), int(w*0.35):int(w*0.65)]
+    h_v = center[:, :, 0].reshape(-1)
+    s_v = center[:, :, 1].reshape(-1)
+    v_v = center[:, :, 2].reshape(-1)
+    valid = (s_v > 50) & (v_v > 50)
+    return int(np.median(h_v[valid])) if valid.sum() >= 50 else -1
+
+
+def tensor_to_display(tensor):
+    """Converts an ImageNet-normalised CHW tensor to a HWC float32 numpy array ready for imshow."""
+    mean = np.array([0.485, 0.456, 0.406])
+    std  = np.array([0.229, 0.224, 0.225])
+    img  = tensor.permute(1, 2, 0).numpy() * std + mean
+    return np.clip(img, 0, 1)
+
+
+def diagnose_crop_roi(bgr):
+    """
+    Runs crop_table_roi step-by-step and returns (status_str, corners_or_None).
+    status_str is 'OK' on success or a 'FAIL: <reason>' string on the failing step.
+    Useful for debugging which images the table detector cannot handle.
+    """
+    try:
+        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        h, w = hsv.shape[:2]
+        center = hsv[int(h*0.35):int(h*0.65), int(w*0.35):int(w*0.65)]
+        h_vals = center[:, :, 0].reshape(-1)
+        s_vals = center[:, :, 1].reshape(-1)
+        v_vals = center[:, :, 2].reshape(-1)
+        valid = (s_vals > 50) & (v_vals > 50)
+        if valid.sum() < 50:
+            return "FAIL: cloth colour (too few valid pixels)", None
+
+        h_med = int(np.median(h_vals[valid]))
+        mask = cv2.inRange(hsv,
+                           np.array([max(0, h_med - 18), 70, 70]),
+                           np.array([min(179, h_med + 18), 255, 255]))
+        mask[:int(0.2 * h), :] = 0
+        mask[int(0.9 * h):, :] = 0
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
+        if mask.sum() == 0:
+            return "FAIL: mask empty after morphology", None
+
+        n, labels, _, centroids = cv2.connectedComponentsWithStats(mask)
+        if n <= 1:
+            return "FAIL: no connected components", None
+
+        cp = np.array([w / 2, h / 2])
+        best = min(range(1, n), key=lambda i: np.linalg.norm(centroids[i] - cp))
+        comp = np.uint8(labels == best) * 255
+
+        contours, _ = cv2.findContours(comp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return "FAIL: no contours", None
+
+        hull = cv2.convexHull(max(contours, key=cv2.contourArea))
+        peri = cv2.arcLength(hull, True)
+        corners = None
+        for eps in [0.01, 0.02, 0.03]:
+            approx = cv2.approxPolyDP(hull, eps * peri, True)
+            if len(approx) == 4:
+                corners = approx.reshape(4, 2).astype(np.float32)
+                break
+        if corners is None:
+            corners = cv2.boxPoints(cv2.minAreaRect(hull)).astype(np.float32)
+
+        y_s = corners[np.argsort(corners[:, 1])]
+        top, bot = y_s[:2], y_s[2:]
+        tl, tr = top[np.argsort(top[:, 0])]
+        bl, br = bot[np.argsort(bot[:, 0])]
+        corners = np.array([tl, tr, br, bl], dtype=np.float32)
+
+        cx, cy = corners[:, 0], corners[:, 1]
+        area = 0.5 * abs(np.dot(cx, np.roll(cy, -1)) - np.dot(cy, np.roll(cx, -1)))
+        if area < 1000:
+            return f"FAIL: corners area too small ({area:.0f}px²)", None
+
+        return "OK", corners
+
+    except Exception as e:
+        return f"FAIL: exception — {e}", None
+
+
 ######################## Utility helper functions (Task 1 only) ########################
 
 def draw_boxes_rgb(img_rgb, boxes, labels=None, color=(255, 0, 0), thickness=2):

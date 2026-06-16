@@ -1,5 +1,11 @@
-name,backbone,head,input_size,lr,epochs,batch_size,augment,crop_table,val_mae,val_acc,val_off1,test_mae,test_acc,test_off1
+name,backbone,head,input_size,loss,optimizer,lr,lr_patience,epochs,batch_size,augment,crop_table,val_mae,val_acc,val_off1,test_mae,test_acc,test_off1
 resnet18_reg,resnet18,regression,384,smooth_l1,adam,0.0001,7,40,16,light,False,0.9583,0.4167,0.7083,1.0833,0.375,0.75
 scratch_reg,scratch,regression,224,smooth_l1,adam,0.001,7,40,16,light,False,2.0,0.0833,0.4167,1.8333,0.125,0.5833
 resnet18_nopretrain,resnet18_nopretrain,regression,384,smooth_l1,adam,0.001,7,40,16,light,False,2.5833,0.0417,0.4167,2.5417,0.0833,0.3333
 resnet34_reg,resnet34,regression,384,smooth_l1,adam,0.0001,7,40,16,light,False,0.8333,0.5,0.7083,1.1667,0.3333,0.7083
+resnet18_cls,resnet18,classification,384,smooth_l1,adam,0.0001,7,40,16,light,False,1.875,0.25,0.4167,2.25,0.1667,0.4167
+resnet18_reg_224,resnet18,regression,224,smooth_l1,adam,0.0001,7,40,16,light,False,1.0417,0.3333,0.7083,1.4167,0.25,0.625
+resnet18_reg_noaug,resnet18,regression,384,smooth_l1,adam,0.0001,7,40,16,none,False,1.2083,0.25,0.5833,1.1667,0.2083,0.7917
+resnet18_reg_crop,resnet18,regression,384,smooth_l1,adam,0.0001,7,40,16,light,True,1.0417,0.2917,0.75,1.2917,0.25,0.75
+resnet18_reg_crop_heavy,resnet18,regression,384,smooth_l1,adam,0.0001,7,40,16,heavy,True,0.9167,0.4583,0.75,1.1667,0.4583,0.7083
+resnet18_reg_ext_crop_heavy,resnet18,regression,384,smooth_l1,adam,0.0001,7,40,16,heavy,True,0.8333,0.5,0.8333,0.9167,0.5833,0.7917

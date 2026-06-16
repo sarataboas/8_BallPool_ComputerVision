@@ -28,6 +28,98 @@ _INFER_SIZE = 384  # matches training input size of the winning model
 
 
 # ---------------------------------------------------------------------------
+# Table crop preprocessing
+# ---------------------------------------------------------------------------
+
+def _order_points(pts: np.ndarray) -> np.ndarray:
+    pts = np.array(pts, dtype=np.float32)
+    y_sorted = pts[np.argsort(pts[:, 1])]
+    top, bottom = y_sorted[:2], y_sorted[2:]
+    tl, tr = top[np.argsort(top[:, 0])]
+    bl, br = bottom[np.argsort(bottom[:, 0])]
+    return np.array([tl, tr, br, bl], dtype=np.float32)
+
+
+def crop_table_roi(bgr: np.ndarray) -> np.ndarray:
+    """
+    Detects the table cloth, finds 4 corners, warps to a top-down view.
+    Falls back to the original image if detection fails at any step.
+    Adapted from image_processing_pipeline.py.
+    """
+    try:
+        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
+        h, w = hsv.shape[:2]
+
+        # Sample cloth colour from image center
+        center = hsv[int(h*0.35):int(h*0.65), int(w*0.35):int(w*0.65)]
+        h_vals, s_vals, v_vals = (center[:, :, c].reshape(-1) for c in range(3))
+        valid = (s_vals > 50) & (v_vals > 50)
+        if valid.sum() < 50:
+            return bgr
+
+        h_med = int(np.median(h_vals[valid]))
+        mask = cv2.inRange(hsv,
+                           np.array([max(0, h_med - 18), 70, 70]),
+                           np.array([min(179, h_med + 18), 255, 255]))
+        mask[:int(0.2 * h), :] = 0
+        mask[int(0.9 * h):, :] = 0
+        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
+
+        # Largest component closest to center
+        n, labels, _, centroids = cv2.connectedComponentsWithStats(mask)
+        if n <= 1:
+            return bgr
+        cp = np.array([w / 2, h / 2])
+        best = min(range(1, n), key=lambda i: np.linalg.norm(centroids[i] - cp))
+        comp = np.uint8(labels == best) * 255
+
+        # Contour → 4 corners
+        contours, _ = cv2.findContours(comp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return bgr
+        hull = cv2.convexHull(max(contours, key=cv2.contourArea))
+        peri = cv2.arcLength(hull, True)
+        corners = None
+        for eps in [0.01, 0.02, 0.03]:
+            approx = cv2.approxPolyDP(hull, eps * peri, True)
+            if len(approx) == 4:
+                corners = approx.reshape(4, 2).astype(np.float32)
+                break
+        if corners is None:
+            corners = cv2.boxPoints(cv2.minAreaRect(hull))
+        corners = _order_points(corners)
+
+        # Reject tiny detections
+        cx, cy = corners[:, 0], corners[:, 1]
+        if 0.5 * abs(np.dot(cx, np.roll(cy, -1)) - np.dot(cy, np.roll(cx, -1))) < 1000:
+            return bgr
+
+        # Expand corners outward by 25px
+        mcx, mcy = np.mean(cx), np.mean(cy)
+        exp = []
+        for px, py in corners:
+            dx, dy = px - mcx, py - mcy
+            n_ = np.sqrt(dx**2 + dy**2) + 1e-6
+            exp.append([px + 25 * dx / n_, py + 25 * dy / n_])
+        pts = np.array(exp, dtype=np.float32)
+
+        # Warp to top-down, 2:1 pool table aspect ratio
+        tl, tr, br, bl = pts
+        max_w = int((np.linalg.norm(br - bl) + np.linalg.norm(tr - tl)) / 2)
+        max_h = int(max_w * 2.0)
+        max_w, max_h = int(max_w * 2.0), int(max_h * 2.0)
+        dst = np.array([[0, 0], [max_w-1, 0], [max_w-1, max_h-1], [0, max_h-1]],
+                       dtype=np.float32)
+        M = cv2.getPerspectiveTransform(pts, dst)
+        return cv2.warpPerspective(bgr, M, (max_w, max_h), flags=cv2.INTER_CUBIC)
+
+    except Exception:
+        return bgr
+
+
+# ---------------------------------------------------------------------------
 # Data
 # ---------------------------------------------------------------------------
 
@@ -57,7 +149,7 @@ def get_transform(cfg: dict, train: bool) -> T.Compose:
         elif aug == "heavy":
             steps += [
                 T.RandomHorizontalFlip(),
-                T.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.2),
+                T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
                 T.RandomAffine(degrees=0, translate=(0.05, 0.05)),
             ]
 
@@ -72,17 +164,21 @@ class PoolBallDataset(Dataset):
     count is -1 when labels_dir is None (inference mode).
     """
     def __init__(self, images_dir: Path, labels_dir: Optional[Path] = None,
-                 transform=None):
-        self.images    = sorted(Path(images_dir).glob("*.jpg"))
+                 transform=None, crop_table: bool = False):
+        self.images     = sorted(Path(images_dir).glob("*.jpg"))
         self.labels_dir = Path(labels_dir) if labels_dir is not None else None
         self.transform  = transform
+        self.crop_table = crop_table
 
     def __len__(self) -> int:
         return len(self.images)
 
     def __getitem__(self, idx):
         img_path = self.images[idx]
-        img = cv2.cvtColor(cv2.imread(str(img_path)), cv2.COLOR_BGR2RGB)
+        bgr = cv2.imread(str(img_path))
+        if self.crop_table and not img_path.name.startswith('ext_'):
+            bgr = crop_table_roi(bgr)
+        img = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         if self.transform:
             img = self.transform(img)
 
@@ -101,6 +197,7 @@ def build_loader(split_dir: Path, cfg: dict, train: bool = False) -> DataLoader:
         images_dir=Path(split_dir) / "images",
         labels_dir=Path(split_dir) / "labels",
         transform=transform,
+        crop_table=cfg.get("crop_table", False),
     )
     g = torch.Generator().manual_seed(cfg.get("seed", 42))
     return DataLoader(
