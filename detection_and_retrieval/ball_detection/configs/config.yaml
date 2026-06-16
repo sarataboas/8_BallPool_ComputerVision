@@ -1,15 +1,14 @@
-dataset_yaml: "configs/data_local.yaml"
+dataset_yaml: configs/data_no_dot.yaml
 
-base_model: "yolo11n.pt"
+base_model: models/base/yolo11n.pt
+trained_model: models/trained/ball_detector_without_dots.pt
 
-project_dir: "runs"
-experiment_name: "yolo11n_ball_detection"
+project_dir: runs
+experiment_name: exp02_yolo11n_without_dots
 
-epochs: 15
+epochs: 50
 imgsz: 640
 batch: 4
 
 confidence_threshold: 0.25
 iou_threshold: 0.5
-
-trained_model: "weights/best.pt"
