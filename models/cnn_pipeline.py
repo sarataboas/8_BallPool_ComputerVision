@@ -152,6 +152,16 @@ def get_transform(cfg: dict, train: bool) -> T.Compose:
                 T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
                 T.RandomAffine(degrees=0, translate=(0.05, 0.05)),
             ]
+        elif aug == "heavy_motivated":
+            # Justified per domain analysis (Run 8):
+            # - rotation ±10°: closes gap with external data's Roboflow ±15° rotation
+            # - b/c/s=0.3: broadcast (vivid, high contrast) vs phone camera (flat, muted)
+            # - hue=0.15: forces colour-invariant features; prevents table-colour shortcuts
+            steps += [
+                T.RandomHorizontalFlip(),
+                T.RandomRotation(degrees=10, fill=0),
+                T.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3, hue=0.15),
+            ]
 
     steps += [T.ToTensor(), T.Normalize(mean, std)]
     return T.Compose(steps)
@@ -176,14 +186,15 @@ class PoolBallDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.images[idx]
         bgr = cv2.imread(str(img_path))
-        if self.crop_table and not img_path.name.startswith('ext_'):
+        if self.crop_table:
             bgr = crop_table_roi(bgr)
         img = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         if self.transform:
             img = self.transform(img)
 
         if self.labels_dir is not None:
-            count = float(count_balls_from_label(self.labels_dir / (img_path.stem + ".txt")))
+            label_path = self.labels_dir / (img_path.stem + ".txt")
+            count = float(count_balls_from_label(label_path))
         else:
             count = -1.0
 
@@ -221,7 +232,7 @@ def build_loaders(train_dir: Path, valid_dir: Path,
 class BallCounterCNN(nn.Module):
     """
     Winning architecture — updated to final config after experiments.
-    Placeholder: ResNet18 regression head (expected baseline winner).
+    
     """
     def __init__(self):
         super().__init__()
@@ -264,6 +275,8 @@ def train_model(model: nn.Module, train_loader: DataLoader,
     best_val_mae = float("inf")
     best_state   = None
     weights_dir  = Path(cfg.get("weights_dir", "."))
+    es_patience  = cfg.get("early_stopping_patience", None)
+    epochs_no_improve = 0
 
     for epoch in range(cfg["epochs"]):
         model.train()
@@ -292,10 +305,17 @@ def train_model(model: nn.Module, train_loader: DataLoader,
         if val_mae < best_val_mae:
             best_val_mae = val_mae
             best_state   = {k: v.cpu().clone() for k, v in model.state_dict().items()}
+            epochs_no_improve = 0
+        else:
+            epochs_no_improve += 1
 
         if (epoch + 1) % 5 == 0 or epoch == 0:
             print(f"  Epoch {epoch+1:>3}/{cfg['epochs']}  "
                   f"train_loss={train_loss:.4f}  val_mae={val_mae:.4f}")
+
+        if es_patience and epochs_no_improve >= es_patience:
+            print(f"  Early stopping at epoch {epoch+1} (no improvement for {es_patience} epochs)")
+            break
 
     if best_state is not None:
         model.load_state_dict(best_state)
