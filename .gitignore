@@ -57,6 +57,7 @@ detection_and_retrieval/ball_detection/models/
 testing/experiments/*
 # Results
 results/*runs/
+results/*
 
 # YOLO / Ultralytics training outputs
 **/runs/
