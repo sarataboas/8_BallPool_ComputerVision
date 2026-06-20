@@ -43,7 +43,7 @@ retrieval/
 ├── experiment_2_topview.ipynb
 ├── experiment_3_contrastive.ipynb
 └── experiment_4_combined.ipynb
-``
+```
 
 
 ## **Experiments**
