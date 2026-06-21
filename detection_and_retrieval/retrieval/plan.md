@@ -48,7 +48,7 @@ retrieval/
 | E1 | Raw Image Retrieval Baseline | [x] Done  | [exp1_raw_baseline](experiments/exp1_raw_baseline.ipynb) | Based on the professor's baseline notebook |
 | E2 | Deep Feature Retrieval: Pretrained Embeddings + Cosine Similarity | [-] Progress | - | - |
 
-
+----
 
 ### **Experiment 1: Raw Image Retrieval Baseline**
 
@@ -77,6 +77,7 @@ For each query image:
 - ResNet should be better, but still may suffer from viewpoint bias.
 
 
+----
 ### **Experiment 2:  Deep Feature Retrieval**
 
 - **Goal:** Evaluate whether deep visual features extracted from a pretrained CNN provide a better retrieval representation than direct pixel-level similarity.
