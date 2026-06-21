@@ -34,24 +34,18 @@ Pixel comparison tends to fail because different cameras on the same table will 
 retrieval/
 │
 ├── utils/
-│   ├── data.py          # load partition.csv, load images, split train/test
-│   ├── metrics.py       # MSE, SSIM, cosine similarity
-│   ├── features.py      # ResNet embedding extraction
-│   └── visualization.py # plot query + top-k results
-│
-├── experiment_1_raw_baseline.ipynb
-├── experiment_2_topview.ipynb
-├── experiment_3_contrastive.ipynb
-└── experiment_4_combined.ipynb
+│   ├── data.py          # load partition.csv, load images, show images, denormalize images for visualization
+├── exp1_raw_baseline.ipynb
+├──
 ```
 
 
 ## **Experiments**
 
 #### **Experiments Overview**
-| Experiment  | Brief Description | Status  | Results File | Observations | 
+| Experiment  | Brief Description | Status  | Results | Observations | 
 |------------|-------------------|--------|---------------------------|--------|
-| E1 | Raw Image Retrieval Baseline | [-] Progress  | - | - |
+| E1 | Raw Image Retrieval Baseline | [x] Done  | [exp1_raw_baseline](experiments/exp1_raw_baseline.ipynb) | Based on the professor's baseline notebook |
 
 
 
