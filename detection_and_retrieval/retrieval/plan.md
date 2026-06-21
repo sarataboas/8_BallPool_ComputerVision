@@ -46,6 +46,7 @@ retrieval/
 | Experiment  | Brief Description | Status  | Results | Observations | 
 |------------|-------------------|--------|---------------------------|--------|
 | E1 | Raw Image Retrieval Baseline | [x] Done  | [exp1_raw_baseline](experiments/exp1_raw_baseline.ipynb) | Based on the professor's baseline notebook |
+| E2 | Deep Feature Retrieval: Pretrained Embeddings + Cosine Similarity | [-] Progress | - | - |
 
 
 
@@ -55,7 +56,7 @@ retrieval/
 **Input:**
 - query images: test
 - retrieval database: train
-- split from partition.csv
+- split from `partition.csv`
 
 **Methods:**
 Use the original images directly: 
@@ -74,3 +75,47 @@ For each query image:
 **Expected:** 
 - MSE and SSIM will probably retrieve images with similar camera pose / similar colors instead of same or similar table state
 - ResNet should be better, but still may suffer from viewpoint bias.
+
+
+### **Experiment 2:  Deep Feature Retrieval**
+
+- **Goal:** Evaluate whether deep visual features extracted from a pretrained CNN provide a better retrieval representation than direct pixel-level similarity.
+
+**Input:**
+- query images: test
+- retrieval database: train
+- split from `partition.csv`
+
+**Methods:**
+- Pretrained ResNet embeddings + cosine similarity
+    - Use a pretrained ResNet model as a feature extractor.
+    - Remove the final classification layer.
+    - Extract one embedding vector per image.
+    - Compare query embeddings against retrieval-pool embeddings using cosine similarity.
+
+- Task-specific CNN embeddings + cosine similarity
+    - Use the CNN trained in Task 2.
+    - Remove the final prediction layer.
+    - Extract embeddings from the last feature layer.
+    - Compare embeddings using cosine similarity.
+
+**Output:**
+For each query image:
+- Query image
+- Top-5 retrieved images using ResNet embeddings
+- Cosine similarity scores
+
+**Expected:**
+- ResNet may retrieve images based on global visual semantics and viewpoint.
+- The task-specific CNN may retrieve images with more relevant billiard-table content because its features are learned from the target domain rather than from generic ImageNet categories.
+- However, because Task 2 is trained for counting, its embeddings may not fully capture spatial ball configuration.
+
+
+
+
+**Comparison Objective:**
+- Compare retrieval quality between:
+  - MSE
+  - SSIM
+  - ResNet embeddings
+  - Task-specific CNN embeddings
