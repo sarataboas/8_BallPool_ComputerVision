@@ -69,3 +69,15 @@ def show_image(dataset, idx):
     plt.title(name)
     plt.axis("off")
     plt.show()
+
+IMAGENET_MEAN = torch.tensor([0.485, 0.456, 0.406])
+IMAGENET_STD = torch.tensor([0.229, 0.224, 0.225])
+
+def denormalize_image(img_tensor):
+    """
+    Converts a normalized tensor [3, H, W] into an image array [H, W, 3].
+    """
+    img = img_tensor.detach().cpu().permute(1, 2, 0)
+    img = img * IMAGENET_STD + IMAGENET_MEAN
+    img = torch.clamp(img, 0, 1)
+    return img.numpy()
