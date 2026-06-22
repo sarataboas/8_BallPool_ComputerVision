@@ -27,97 +27,6 @@ import torchvision.models as tv_models
 _INFER_SIZE = 384  # matches training input size of the winning model
 
 
-# ---------------------------------------------------------------------------
-# Table crop preprocessing
-# ---------------------------------------------------------------------------
-
-def _order_points(pts: np.ndarray) -> np.ndarray:
-    pts = np.array(pts, dtype=np.float32)
-    y_sorted = pts[np.argsort(pts[:, 1])]
-    top, bottom = y_sorted[:2], y_sorted[2:]
-    tl, tr = top[np.argsort(top[:, 0])]
-    bl, br = bottom[np.argsort(bottom[:, 0])]
-    return np.array([tl, tr, br, bl], dtype=np.float32)
-
-
-def crop_table_roi(bgr: np.ndarray) -> np.ndarray:
-    """
-    Detects the table cloth, finds 4 corners, warps to a top-down view.
-    Falls back to the original image if detection fails at any step.
-    Adapted from image_processing_pipeline.py.
-    """
-    try:
-        hsv = cv2.cvtColor(bgr, cv2.COLOR_BGR2HSV)
-        h, w = hsv.shape[:2]
-
-        # Sample cloth colour from image center
-        center = hsv[int(h*0.35):int(h*0.65), int(w*0.35):int(w*0.65)]
-        h_vals, s_vals, v_vals = (center[:, :, c].reshape(-1) for c in range(3))
-        valid = (s_vals > 50) & (v_vals > 50)
-        if valid.sum() < 50:
-            return bgr
-
-        h_med = int(np.median(h_vals[valid]))
-        mask = cv2.inRange(hsv,
-                           np.array([max(0, h_med - 18), 70, 70]),
-                           np.array([min(179, h_med + 18), 255, 255]))
-        mask[:int(0.2 * h), :] = 0
-        mask[int(0.9 * h):, :] = 0
-        k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (11, 11))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, k)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, k)
-
-        # Largest component closest to center
-        n, labels, _, centroids = cv2.connectedComponentsWithStats(mask)
-        if n <= 1:
-            return bgr
-        cp = np.array([w / 2, h / 2])
-        best = min(range(1, n), key=lambda i: np.linalg.norm(centroids[i] - cp))
-        comp = np.uint8(labels == best) * 255
-
-        # Contour → 4 corners
-        contours, _ = cv2.findContours(comp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        if not contours:
-            return bgr
-        hull = cv2.convexHull(max(contours, key=cv2.contourArea))
-        peri = cv2.arcLength(hull, True)
-        corners = None
-        for eps in [0.01, 0.02, 0.03]:
-            approx = cv2.approxPolyDP(hull, eps * peri, True)
-            if len(approx) == 4:
-                corners = approx.reshape(4, 2).astype(np.float32)
-                break
-        if corners is None:
-            corners = cv2.boxPoints(cv2.minAreaRect(hull))
-        corners = _order_points(corners)
-
-        # Reject tiny detections
-        cx, cy = corners[:, 0], corners[:, 1]
-        if 0.5 * abs(np.dot(cx, np.roll(cy, -1)) - np.dot(cy, np.roll(cx, -1))) < 1000:
-            return bgr
-
-        # Expand corners outward by 25px
-        mcx, mcy = np.mean(cx), np.mean(cy)
-        exp = []
-        for px, py in corners:
-            dx, dy = px - mcx, py - mcy
-            n_ = np.sqrt(dx**2 + dy**2) + 1e-6
-            exp.append([px + 25 * dx / n_, py + 25 * dy / n_])
-        pts = np.array(exp, dtype=np.float32)
-
-        # Warp to top-down, 2:1 pool table aspect ratio
-        tl, tr, br, bl = pts
-        max_w = int((np.linalg.norm(br - bl) + np.linalg.norm(tr - tl)) / 2)
-        max_h = int(max_w * 2.0)
-        max_w, max_h = int(max_w * 2.0), int(max_h * 2.0)
-        dst = np.array([[0, 0], [max_w-1, 0], [max_w-1, max_h-1], [0, max_h-1]],
-                       dtype=np.float32)
-        M = cv2.getPerspectiveTransform(pts, dst)
-        return cv2.warpPerspective(bgr, M, (max_w, max_h), flags=cv2.INTER_CUBIC)
-
-    except Exception:
-        return bgr
-
 
 # ---------------------------------------------------------------------------
 # Data
@@ -186,8 +95,7 @@ class PoolBallDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.images[idx]
         bgr = cv2.imread(str(img_path))
-        if self.crop_table:
-            bgr = crop_table_roi(bgr)
+      
         img = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         if self.transform:
             img = self.transform(img)
@@ -231,17 +139,17 @@ def build_loaders(train_dir: Path, valid_dir: Path,
 
 class BallCounterCNN(nn.Module):
     """
-    Winning architecture — updated to final config after experiments.
-    
+    Winning architecture: ResNet18 backbone + regression head.
+    Attribute named 'backbone' to match state-dict keys saved by the training loop.
     """
     def __init__(self):
         super().__init__()
         base = tv_models.resnet18(weights=tv_models.ResNet18_Weights.IMAGENET1K_V1)
-        self.features = nn.Sequential(*list(base.children())[:-1])
+        self.backbone = nn.Sequential(*list(base.children())[:-1])
         self.head = nn.Sequential(nn.Dropout(0.2), nn.Linear(512, 1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.features(x).flatten(1)
+        x = self.backbone(x).flatten(1)
         return self.head(x)
 
 
@@ -387,13 +295,15 @@ def run_inference(input_json: str, output_json: str, weights: str) -> None:
     results = []
     with torch.no_grad():
         for path_str in image_paths:
-            img   = cv2.cvtColor(cv2.imread(str(path_str)), cv2.COLOR_BGR2RGB)
-            img_t = transform(img).unsqueeze(0).to(device)
-            out   = model(img_t)
-            if out.shape[-1] > 1:
-                count = int(out.argmax(dim=1).item())
-            else:
-                count = int(np.clip(round(out.squeeze().item()), 0, 16))
+            img = cv2.cvtColor(cv2.imread(str(path_str)), cv2.COLOR_BGR2RGB)
+            img_t      = transform(img).unsqueeze(0).to(device)
+            img_t_flip = torch.flip(img_t, dims=[3])   # horizontal flip
+
+            # TTA: average raw outputs over original + flipped image before rounding.
+            # Horizontal flip is valid because table orientation is arbitrary and the
+            # model was trained with random horizontal flip.
+            raw = (model(img_t) + model(img_t_flip)) / 2.0
+            count = int(np.clip(round(raw.squeeze().item()), 0, 16))
             results.append({"image_path": path_str, "num_balls": count})
 
     with open(output_json, "w") as f:

@@ -11,3 +11,7 @@ resnet18_reg_ext_80,resnet18,regression,384,smooth_l1,adam,0.0001,7,80,16,light,
 resnet34_reg_ext,resnet34,regression,384,smooth_l1,adam,0.0001,7,80,16,light,False,0.625,0.4583,0.9167,0.875,0.375,0.8333
 resnet18_reg_ext_heavy,resnet18,regression,384,smooth_l1,adam,0.0001,7,80,16,heavy_motivated,False,0.7083,0.5833,0.7917,0.875,0.375,0.875
 resnet18_reg_ext_80_seed42,resnet18,regression,384,smooth_l1,adam,0.0001,7,80,16,light,False,0.5833,0.5,0.9167,0.875,0.5,0.7917
+resnet18_reg_ext_80_seed7,resnet18,regression,384,smooth_l1,adam,0.0001,7,80,16,light,False,0.5833,0.625,0.7917,1.0,0.2917,0.875
+resnet18_reg_ext_80_seed0,resnet18,regression,384,smooth_l1,adam,0.0001,7,80,16,light,False,0.5833,0.5,0.9167,1.0833,0.2917,0.75
+resnet18_reg_ext_80_seed123,resnet18,regression,384,smooth_l1,adam,0.0001,7,80,16,light,False,0.5417,0.5417,0.9167,1.0,0.375,0.8333
+resnet18_reg_ext_80_seed1337,resnet18,regression,384,smooth_l1,adam,0.0001,7,80,16,light,False,0.625,0.4167,0.9583,1.0833,0.1667,0.9167

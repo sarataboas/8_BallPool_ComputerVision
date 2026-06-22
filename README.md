@@ -53,11 +53,25 @@ Output JSON:
 | File | Role |
 |---|---|
 | `models/cnn_pipeline.py` | Standalone deliverable — no imports from `testing/` |
+| `models/best.pth` | Deliverable weights — ResNet18, 1100 train images, val MAE=0.583 |
 | `testing/task2/architectures.py` | `get_model(backbone, head)` factory for comparison runs |
 | `testing/task2/experiment.py` | `run_experiment(cfg)` — build → train → eval → save → log |
 | `testing/task2/viz.py` | `plot_history`, `plot_error_distribution`, `show_worst_predictions` |
 | `testing/experiments/results.csv` | Persistent experiment log |
 | `testing/config.py` | Shared paths + `DEFAULT_CFG` |
+
+**Deliverable usage:**
+```bash
+python models/cnn_pipeline.py \
+    --input  input.json \
+    --output output.json \
+    --weights models/best.pth
+```
+
+Input JSON: `{"image_path": ["path/to/img1.jpg", ...]}`
+Output JSON: `[{"image_path": "path/to/img1.jpg", "num_balls": 12}, ...]`
+
+Inference uses TTA (horizontal flip averaged with original) internally.
 
 ---
 
