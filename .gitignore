@@ -48,16 +48,25 @@ example_json/
 data/8-Ball Pool.v3i.yolov11/*
 data/8-Ball Pool.v3i.yolov11_no_dot/*
 data/external/*
+data/teacher_split/
+partition.csv
 
 
-
-# Model weights
+# Model weights (experiment checkpoints — best.pth is tracked as deliverable)
 models/cnn/*.pth
 detection_and_retrieval/ball_detection/models/
+
+# Experiment logs
 testing/experiments/*
+
+# Generated inference / evaluation outputs
+models/output.json
+models/json_metrics.csv
+
 # Results
 results/*runs/
 results/*
+task2_experiments.txt
 
 # YOLO / Ultralytics training outputs
 **/runs/
