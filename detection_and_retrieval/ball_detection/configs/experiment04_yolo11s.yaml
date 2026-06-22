@@ -1,0 +1,25 @@
+# Experiment 04 - same as experiment03 (no Dot class, imgsz 1280) but the
+# base model is upgraded from yolo11n to yolo11s. Everything else (dataset,
+# batch, epochs, augmentation defaults) is kept identical so any change in
+# results can be attributed to model capacity alone.
+#
+# Why: exp03's loss curves showed val/box_loss and val/dfl_loss (the terms
+# governing how tightly a box hugs an object) plateaued by ~epoch 20-30 while
+# train loss kept slowly improving - a convergence/capacity ceiling, not an
+# undertrained model. More epochs at imgsz1280 would not help the remaining
+# touching/clustered-ball localization errors; a larger model might.
+
+dataset_yaml: configs/data_no_dot.yaml
+
+base_model: models/base/yolo11s.pt
+trained_model: models/trained/ball_detector_yolo11s_imgsz1280_no_dot.pt
+
+project_dir: runs
+experiment_name: exp04_yolo11s_imgsz1280_no_dot
+
+epochs: 50
+imgsz: 1280
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5

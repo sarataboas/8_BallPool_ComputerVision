@@ -1,0 +1,20 @@
+# Experiment 02 - same hyperparameters as experiment01, but the Dot class
+# (rail markers, not balls) is removed from the dataset: 4 classes
+# (Black, Cue, Solid, Striped). Best/production model so far:
+# test mAP50=0.931, mAP50-95=0.773 (vs 0.867/0.649 for experiment01).
+# See outputs/evaluation_test_exp02.json.
+
+dataset_yaml: configs/data_no_dot.yaml
+
+base_model: models/base/yolo11n.pt
+trained_model: models/trained/ball_detector_no_dot.pt
+
+project_dir: runs
+experiment_name: exp02_yolo11n_without_dots
+
+epochs: 50
+imgsz: 640
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5

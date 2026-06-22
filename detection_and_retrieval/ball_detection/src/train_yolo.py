@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 import shutil
 
 import yaml
@@ -149,12 +150,24 @@ def copy_full_experiment(run_dir: Path, experiments_dir: Path, experiment_name: 
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="Train a YOLO ball detector from a named experiment config."
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        required=True,
+        help="Path to experiment config YAML, e.g. configs/experiment03_imgsz1280.yaml",
+    )
+    args = parser.parse_args()
+
     # This script is inside ball_detection/src
     # parents[1] points to ball_detection/
     current_dir = Path(__file__).resolve().parents[1]
 
-    # Load config.yaml
-    config_path = current_dir / "configs" / "config.yaml"
+    config_path = Path(args.config)
+    if not config_path.is_absolute():
+        config_path = current_dir / config_path
     config = load_config(config_path)
 
     # Paths from config

@@ -1,0 +1,25 @@
+# Experiment 03 - same as experiment02 (no Dot class) but imgsz raised from
+# 640 to 1280. Everything else (dataset, batch, epochs, augmentation
+# defaults) is kept identical so any change in results can be attributed to
+# imgsz alone.
+#
+# Why: per-image error analysis of experiment02 on the test set showed
+# missed balls have ~2.5x smaller pixel area and sit almost touching their
+# nearest neighbor (racked/clustered balls, distant camera framing) compared
+# to correctly detected balls. Training at a higher resolution preserves
+# more pixels for small/touching balls before downscaling.
+
+dataset_yaml: configs/data_no_dot.yaml
+
+base_model: models/base/yolo11n.pt
+trained_model: models/trained/ball_detector_imgsz1280_no_dot.pt
+
+project_dir: runs
+experiment_name: exp03_yolo11n_imgsz1280_no_dot
+
+epochs: 50
+imgsz: 1280
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5

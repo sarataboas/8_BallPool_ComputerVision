@@ -100,7 +100,7 @@ image_name,partition
 18_png.rf.deca17bfe3ef6a0738238319d1dcdd71.jpg,train
 190_png.rf.24ed612fdc752703c31861be4bc95545.jpg,train
 192_png.rf.17e286ffa138705b5b8013c45e867d69.jpg,train
-194_png.rf.6b3c01d7e039ffa56fe5023410954781.jpg,train
+94_png.rf.914de818a4ff0d086b7cb41abc8b95fd.jpg, train
 19a_png.rf.dd2935e517f1adfcd0a735f3f937fa02.jpg,train
 19t_png.rf.379beff6ca036f9dfee92873c63e1c91.jpg,train
 19_png.rf.9bdb39240f3b93c04a458babb9612353.jpg,train
@@ -244,5 +244,5 @@ image_name,partition
 49_png.rf.34dd21e67336cfaacfc62268433a9c2d.jpg,test
 52_png.rf.d9ef7051544ef241be7a8134959f3411.jpg,test
 58_png.rf.b94027c8488125d21180dde164fc71f6.jpg,test
-94_png.rf.914de818a4ff0d086b7cb41abc8b95fd.jpg,test
+194_png.rf.6b3c01d7e039ffa56fe5023410954781.jpg,test
 9_png.rf.3a4164e5647feea77eb3062be7e65aea.jpg,test

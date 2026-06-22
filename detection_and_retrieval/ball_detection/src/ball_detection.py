@@ -38,9 +38,9 @@ class BallDetector:
         # parents[1] points to ball_detection/
         current_dir = Path(__file__).resolve().parents[1]
 
-        # Load config
+        # Load config (defaults to the current best/production experiment)
         if config_path is None:
-            config_path = current_dir / "configs" / "config.yaml"
+            config_path = current_dir / "configs" / "experiment02_no_dot.yaml"
         else:
             config_path = Path(config_path)
             if not config_path.is_absolute():

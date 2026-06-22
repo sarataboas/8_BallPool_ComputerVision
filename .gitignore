@@ -68,4 +68,9 @@ results/*
 **/yolo11m.pt
 **/yolo11l.pt
 **/yolo11x.pt
+**/yolo26n.pt
+**/yolo26s.pt
+**/yolo26m.pt
+**/yolo26l.pt
+**/yolo26x.pt
 

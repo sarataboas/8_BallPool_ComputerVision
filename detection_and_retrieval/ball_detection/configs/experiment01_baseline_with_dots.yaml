@@ -1,0 +1,21 @@
+# Experiment 01 - baseline YOLOv11n.
+# Dataset includes the Dot class (rail markers), 5 classes total
+# (Black, Cue, Dot, Solid, Striped). Originally trained on CPU.
+# Superseded by experiment02: Dot hurt mAP50 by ~6 pts and mAP50-95 by ~12 pts
+# on the test set (Dot AP50-95 was only 0.29 - tiny rail markers are hard to
+# localize tightly). See outputs/evaluation_test_exp01.json.
+
+dataset_yaml: configs/data_local.yaml
+
+base_model: models/base/yolo11n.pt
+trained_model: models/trained/ball_detector_with_dots.pt
+
+project_dir: runs
+experiment_name: exp01_yolo11n_with_dots
+
+epochs: 50
+imgsz: 640
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5
