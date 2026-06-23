@@ -187,6 +187,12 @@ Compare against:
 - Task 2 CNN embeddings
 
 
+
+### **Experiment 3.1: Combination of embeedings**
+
+Usar embeddings da imagem + bolas + ...
+
+
 ----
 ### **Experiment 4: Top-view Normalized Retrieval**
 
