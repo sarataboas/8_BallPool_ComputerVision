@@ -64,6 +64,12 @@ def get_model(backbone: str, head: str, num_classes: int = 17) -> nn.Module:
         features    = nn.Sequential(*list(base.children())[:-1])   # (B, 512, 1, 1)
         in_features = 512
         dropout     = 0.2
+    elif backbone == "efficientnet_b0":
+        base        = tv_models.efficientnet_b0(weights=tv_models.EfficientNet_B0_Weights.IMAGENET1K_V1)
+        base.classifier = nn.Identity()   # strip head; forward now returns (B, 1280)
+        features    = base
+        in_features = 1280
+        dropout     = 0.2
     elif backbone == "scratch":
         features    = _ScratchCNN()
         in_features = _ScratchCNN.out_features

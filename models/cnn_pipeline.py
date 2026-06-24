@@ -163,7 +163,12 @@ def train_model(model: nn.Module, train_loader: DataLoader,
     Trains model, checkpoints on best valid MAE, saves weights.
     Returns history: {"train_loss": [...], "val_mae": [...]}.
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     model  = model.to(device)
     head   = cfg.get("head", "regression")
 
@@ -283,7 +288,12 @@ def run_inference(input_json: str, output_json: str, weights: str) -> None:
         data = json.load(f)
     image_paths = data.get("image_path") or data.get("image_paths", [])
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     model  = BallCounterCNN()
     model.load_state_dict(torch.load(weights, map_location=device))
     model.eval()

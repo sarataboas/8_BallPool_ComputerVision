@@ -41,7 +41,12 @@ def run_experiment(cfg: dict) -> Tuple[dict, dict]:
     cfg = {**DEFAULT_CFG, **cfg}
     torch.manual_seed(cfg.get("seed", 42))
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
     print(f"\n{'='*60}")
     print(f"  Run : {cfg['name']}")
     print(f"  {cfg['backbone']} | head={cfg['head']} | size={cfg['input_size']} "
