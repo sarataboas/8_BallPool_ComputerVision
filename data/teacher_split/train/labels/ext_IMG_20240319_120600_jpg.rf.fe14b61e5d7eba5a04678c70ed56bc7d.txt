@@ -1,0 +1,1 @@
+/Users/gjoli/Desktop/uni/2_semester/VC/8_BallPool_ComputerVision/8-Ball Pool.v3i.yolov11/train/labels/ext_IMG_20240319_120600_jpg.rf.fe14b61e5d7eba5a04678c70ed56bc7d.txt
