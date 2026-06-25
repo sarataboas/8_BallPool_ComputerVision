@@ -1,0 +1,152 @@
+[
+    {
+        "image": "181_png.rf.23ccd3b4b31a6fef484f7f0d25cf89d7.jpg",
+        "num_balls": 13,
+        "detections": [
+            {
+                "class_id": 1,
+                "class_name": "Cue",
+                "confidence": 0.9577,
+                "bbox": [
+                    696.14,
+                    485.98,
+                    720.56,
+                    509.77
+                ]
+            },
+            {
+                "class_id": 3,
+                "class_name": "Striped",
+                "confidence": 0.8987,
+                "bbox": [
+                    1176.65,
+                    581.66,
+                    1209.17,
+                    613.59
+                ]
+            },
+            {
+                "class_id": 2,
+                "class_name": "Solid",
+                "confidence": 0.8373,
+                "bbox": [
+                    1283.02,
+                    569.14,
+                    1311.78,
+                    599.58
+                ]
+            },
+            {
+                "class_id": 2,
+                "class_name": "Solid",
+                "confidence": 0.813,
+                "bbox": [
+                    1251.93,
+                    566.04,
+                    1275.97,
+                    577.22
+                ]
+            },
+            {
+                "class_id": 3,
+                "class_name": "Striped",
+                "confidence": 0.778,
+                "bbox": [
+                    1203.69,
+                    576.48,
+                    1235.76,
+                    610.34
+                ]
+            },
+            {
+                "class_id": 3,
+                "class_name": "Striped",
+                "confidence": 0.6967,
+                "bbox": [
+                    1233.24,
+                    576.07,
+                    1263.76,
+                    607.42
+                ]
+            },
+            {
+                "class_id": 2,
+                "class_name": "Solid",
+                "confidence": 0.6885,
+                "bbox": [
+                    1260.24,
+                    571.11,
+                    1286.54,
+                    603.36
+                ]
+            },
+            {
+                "class_id": 2,
+                "class_name": "Solid",
+                "confidence": 0.5974,
+                "bbox": [
+                    1217.24,
+                    563.01,
+                    1242.91,
+                    578.96
+                ]
+            },
+            {
+                "class_id": 3,
+                "class_name": "Striped",
+                "confidence": 0.4488,
+                "bbox": [
+                    1188.06,
+                    562.5,
+                    1216.07,
+                    579.85
+                ]
+            },
+            {
+                "class_id": 3,
+                "class_name": "Striped",
+                "confidence": 0.3753,
+                "bbox": [
+                    1219.31,
+                    563.95,
+                    1243.95,
+                    574.8
+                ]
+            },
+            {
+                "class_id": 2,
+                "class_name": "Solid",
+                "confidence": 0.3625,
+                "bbox": [
+                    1235.16,
+                    576.05,
+                    1265.0,
+                    606.45
+                ]
+            },
+            {
+                "class_id": 3,
+                "class_name": "Striped",
+                "confidence": 0.3369,
+                "bbox": [
+                    1150.79,
+                    558.5,
+                    1181.97,
+                    580.4
+                ]
+            },
+            {
+                "class_id": 3,
+                "class_name": "Striped",
+                "confidence": 0.2625,
+                "bbox": [
+                    1162.87,
+                    571.34,
+                    1190.93,
+                    597.52
+                ]
+            }
+        ],
+        "prediction_image": "/mnt/c/Users/rodri/4\u00ba ano/visao_computacional/8_BallPool_ComputerVision/detection_and_retrieval/ball_detection/outputs/predictions/181_png.rf.23ccd3b4b31a6fef484f7f0d25cf89d7_pred.jpg"
+    }
+]

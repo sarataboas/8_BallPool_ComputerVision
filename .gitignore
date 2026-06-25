@@ -47,6 +47,8 @@ example_json/
 8-Ball Pool.v3i.yolov11/*
 data/8-Ball Pool.v3i.yolov11/*
 data/8-Ball Pool.v3i.yolov11_no_dot/*
+data/8-Ball Pool.v3i.yolov11_no_dot_plus_poolballs_train/*
+data/Pool Balls Detection.v13-v13.yolov11/*
 data/external/*
 data/teacher_split/
 partition.csv

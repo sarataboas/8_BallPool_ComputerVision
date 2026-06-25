@@ -1,0 +1,14 @@
+dataset_yaml: configs/data_no_dot_plus_poolballs_train.yaml
+
+base_model: models/base/yolo11n.pt
+trained_model: models/trained/ball_detector_plus_poolballs_train.pt
+
+project_dir: runs
+experiment_name: exp05_yolo11n_imgsz1280_plus_poolballs_train
+
+epochs: 50
+imgsz: 1280
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5
