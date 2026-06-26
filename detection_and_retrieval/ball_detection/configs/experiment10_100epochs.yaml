@@ -1,0 +1,19 @@
+# Experiment 10 - same as experiment04 (yolo11s, no Dot class, imgsz 1280)
+# but trained for 100 epochs instead of 50. Everything else (dataset, batch,
+# augmentation defaults) is kept identical so any change in results is
+# attributable to training length alone.
+
+dataset_yaml: configs/data_no_dot.yaml
+
+base_model: models/base/yolo11s.pt
+trained_model: models/trained/ball_detector_yolo11s_imgsz1280_100epochs.pt
+
+project_dir: runs
+experiment_name: exp10_yolo11s_imgsz1280_100epochs
+
+epochs: 100
+imgsz: 1280
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5

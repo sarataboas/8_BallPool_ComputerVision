@@ -1,0 +1,35 @@
+# Experiment 09 - same as experiment04 (yolo11s, no Dot class, imgsz 1280)
+# but the first 10 layers (the backbone: Conv/C3k2/SPPF, confirmed via
+# model.model.model layer listing) are frozen during training, matching the
+# "S2" strategy from Sutrisno et al. 2026 (JUTIF), "Optimizing YOLO11 for
+# Dense Crowd Counting under Severe Occlusion via Head-Detection
+# Fine-Tuning". Layer 10 (C2PSA) onward, i.e. the whole neck + detection
+# head, stays trainable.
+#
+# Why: that paper found full fine-tuning still beat freeze=10 on their
+# 1397-image train set - freezing was framed as a cheaper, "competitive"
+# alternative, not a fix targeted at occlusion specifically (resolution was
+# the lever that mattered for their occlusion problem, which we already
+# tested ourselves in exp02->04). But our train set is much smaller (207
+# images vs their 1397), so full fine-tuning is more likely to overfit the
+# generic low-level backbone features on our touching-ball clusters. This
+# tests whether preserving generic backbone features (frozen) while only
+# adapting the neck/head helps generalization on our specific touching-ball
+# failure case, even though it didn't outperform full fine-tuning in their
+# larger-data setting.
+
+dataset_yaml: configs/data_no_dot.yaml
+
+base_model: models/base/yolo11s.pt
+trained_model: models/trained/ball_detector_yolo11s_imgsz1280_freeze10.pt
+
+project_dir: runs
+experiment_name: exp09_yolo11s_imgsz1280_freeze10
+
+epochs: 50
+imgsz: 1280
+batch: 4
+freeze: 10
+
+confidence_threshold: 0.25
+iou_threshold: 0.5

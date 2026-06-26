@@ -6,7 +6,8 @@ import yaml
 import torch
 import pandas as pd
 import matplotlib.pyplot as plt
-from ultralytics import YOLO
+
+from utils import load_detection_model
 
 
 def load_config(config_path: Path) -> dict:
@@ -181,6 +182,7 @@ def main():
     epochs = config["epochs"]
     imgsz = config["imgsz"]
     batch = config["batch"]
+    freeze = config.get("freeze")  # None = train all layers; int N = freeze first N layers
 
     # Check paths
     if not dataset_yaml.exists():
@@ -202,12 +204,13 @@ def main():
     print(f"Epochs: {epochs}")
     print(f"Image size: {imgsz}")
     print(f"Batch size: {batch}")
+    if freeze is not None:
+        print(f"Freezing first {freeze} layers")
 
-    # Load YOLO model
-    model = YOLO(str(base_model))
+    # Load YOLO or RT-DETR model (picked from the base_model filename)
+    model = load_detection_model(base_model)
 
-    # Train model
-    model.train(
+    train_kwargs = dict(
         data=str(dataset_yaml),
         epochs=epochs,
         imgsz=imgsz,
@@ -218,6 +221,11 @@ def main():
         workers=0,
         exist_ok=True,
     )
+    if freeze is not None:
+        train_kwargs["freeze"] = freeze
+
+    # Train model
+    model.train(**train_kwargs)
 
     # Path where YOLO saves the training run
     run_dir = project_dir / experiment_name

@@ -1,9 +1,12 @@
 from pathlib import Path
 import argparse
+import json
 
 import cv2
 import yaml
-from ultralytics import YOLO
+
+from utils import load_detection_model
+from analyze_clustering import nearest_neighbor_ratio
 
 
 COLOR_CORRECT = (0, 200, 0)        # green
@@ -217,15 +220,38 @@ def analyze_image(model, image_path: Path, label_path: Path, imgsz: int, conf: f
     annotated = draw_matches(raw_image.copy(), gt_boxes, pred_boxes, match, model.names)
     zoom = build_error_zoom(raw_image, img_w, img_h, gt_boxes, pred_boxes, match, model.names)
 
+    min_ratio, _ = nearest_neighbor_ratio(gt_boxes)
+
     return {
         "n_gt": len(gt_boxes),
         "n_missed": n_missed,
         "n_false_positive": n_false_positive,
         "n_misclassified": n_misclassified,
         "has_error": (n_missed + n_false_positive + n_misclassified) > 0,
+        "min_ratio": min_ratio,
         "annotated_image": annotated,
         "zoom_image": zoom,
     }
+
+
+def empty_totals() -> dict:
+    return {"gt": 0, "missed": 0, "fp": 0, "miscls": 0, "n_images": 0, "images_with_errors": 0}
+
+
+def add_to_totals(totals: dict, analysis: dict) -> None:
+    totals["gt"] += analysis["n_gt"]
+    totals["missed"] += analysis["n_missed"]
+    totals["fp"] += analysis["n_false_positive"]
+    totals["miscls"] += analysis["n_misclassified"]
+    totals["n_images"] += 1
+    if analysis["has_error"]:
+        totals["images_with_errors"] += 1
+
+
+def print_totals(label: str, totals: dict) -> None:
+    print(f"\n--- {label}: {totals['n_images']} images, {totals['gt']} ground-truth balls ---")
+    print(f"Missed: {totals['missed']}  False positives: {totals['fp']}  Misclassified: {totals['miscls']}")
+    print(f"Images with at least one error: {totals['images_with_errors']}/{totals['n_images']}")
 
 
 def main():
@@ -237,8 +263,21 @@ def main():
     parser.add_argument("--model", type=str, required=True, help="Path to trained YOLO weights.")
     parser.add_argument("--split", type=str, default="test", choices=["val", "test"])
     parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold for predictions.")
+    parser.add_argument(
+        "--iou", type=float, default=None,
+        help="NMS IoU threshold override for predictions. Defaults to the config's iou_threshold.",
+    )
     parser.add_argument("--only-errors", action="store_true", help="Only save images that have at least one error.")
     parser.add_argument("--output-dir", type=str, default=None, help="Where to save annotated images.")
+    parser.add_argument(
+        "--clustered-threshold", type=float, default=0.5,
+        help="A test image is reported as 'clustered' if its closest ground-truth ball "
+             "pair has nearest_neighbor_ratio <= this value (matches oversample_clustered.py).",
+    )
+    parser.add_argument(
+        "--save-json", type=str, default=None,
+        help="Optional path to save the overall/clustered/non_clustered totals as JSON.",
+    )
     args = parser.parse_args()
 
     current_dir = Path(__file__).resolve().parents[1]
@@ -265,9 +304,9 @@ def main():
     if not model_path.is_absolute():
         model_path = current_dir / model_path
 
-    model = YOLO(str(model_path))
+    model = load_detection_model(model_path)
     imgsz = config.get("imgsz", 640)
-    iou_threshold = config.get("iou_threshold", 0.5)
+    iou_threshold = args.iou if args.iou is not None else config.get("iou_threshold", 0.5)
 
     if args.output_dir is None:
         run_label = model_path.parent.parent.name if model_path.parent.name == "weights" else model_path.stem
@@ -280,9 +319,11 @@ def main():
 
     image_paths = sorted(p for p in images_dir.iterdir() if p.suffix.lower() in (".jpg", ".jpeg", ".png"))
 
-    print(f"{'image':<55} {'gt':>3} {'missed':>6} {'fp':>3} {'miscls':>6}")
+    print(f"{'image':<55} {'gt':>3} {'missed':>6} {'fp':>3} {'miscls':>6}  cluster")
 
-    totals = {"gt": 0, "missed": 0, "fp": 0, "miscls": 0, "images_with_errors": 0}
+    totals_overall = empty_totals()
+    totals_clustered = empty_totals()
+    totals_non_clustered = empty_totals()
 
     for image_path in image_paths:
         label_path = labels_dir / f"{image_path.stem}.txt"
@@ -291,17 +332,18 @@ def main():
             imgsz=imgsz, conf=args.conf, iou=iou_threshold,
         )
 
-        totals["gt"] += analysis["n_gt"]
-        totals["missed"] += analysis["n_missed"]
-        totals["fp"] += analysis["n_false_positive"]
-        totals["miscls"] += analysis["n_misclassified"]
+        is_clustered = (
+            analysis["min_ratio"] is not None and analysis["min_ratio"] <= args.clustered_threshold
+        )
+
+        add_to_totals(totals_overall, analysis)
+        add_to_totals(totals_clustered if is_clustered else totals_non_clustered, analysis)
 
         if analysis["has_error"]:
-            totals["images_with_errors"] += 1
             print(
                 f"{image_path.name:<55} {analysis['n_gt']:>3} "
                 f"{analysis['n_missed']:>6} {analysis['n_false_positive']:>3} "
-                f"{analysis['n_misclassified']:>6}"
+                f"{analysis['n_misclassified']:>6}  {'yes' if is_clustered else 'no'}"
             )
 
         if args.only_errors and not analysis["has_error"]:
@@ -314,11 +356,31 @@ def main():
             zoom_path = output_dir / f"{image_path.stem}_error_zoom.jpg"
             cv2.imwrite(str(zoom_path), analysis["zoom_image"])
 
-    print(f"\nTotal ground-truth balls: {totals['gt']}")
-    print(f"Missed: {totals['missed']}  False positives: {totals['fp']}  Misclassified: {totals['miscls']}")
-    print(f"Images with at least one error: {totals['images_with_errors']}/{len(image_paths)}")
+    print_totals("Overall", totals_overall)
+    print_totals(f"Clustered (min_ratio <= {args.clustered_threshold})", totals_clustered)
+    print_totals("Non-clustered", totals_non_clustered)
     print(f"\nAnnotated images saved to: {output_dir}")
     print("Legend: green=correct  orange=misclassified  red=missed  magenta=false positive")
+
+    if args.save_json:
+        save_json_path = Path(args.save_json)
+        if not save_json_path.is_absolute():
+            save_json_path = current_dir / save_json_path
+        save_json_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(save_json_path, "w", encoding="utf-8") as file:
+            json.dump(
+                {
+                    "model": str(model_path),
+                    "split": args.split,
+                    "conf": args.conf,
+                    "clustered_threshold": args.clustered_threshold,
+                    "overall": totals_overall,
+                    "clustered": totals_clustered,
+                    "non_clustered": totals_non_clustered,
+                },
+                file, indent=4,
+            )
+        print(f"Stratified totals saved to: {save_json_path}")
 
 
 if __name__ == "__main__":

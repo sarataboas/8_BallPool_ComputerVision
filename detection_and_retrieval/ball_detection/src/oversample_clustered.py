@@ -102,12 +102,72 @@ def jitter_photometric(image, rng: np.random.Generator):
     return img
 
 
+def jitter_geometric(image, label_lines: list, rng: np.random.Generator) -> tuple:
+    """
+    Small random rotation + scale + translation. This is the part that
+    actually changes the spatial arrangement of touching balls (unlike flip,
+    which is an exact mirror, or photometric jitter, which doesn't move
+    anything) - giving the model new geometry for the same cluster, not just
+    new colors.
+
+    Boxes are recomputed as the axis-aligned bounding box of the
+    rotated/scaled/translated corners, then clipped to the image. A box that
+    loses more than half its area to clipping (e.g. pushed off-frame) is
+    dropped rather than kept as a truncated, mislabeled box.
+    """
+    img_h, img_w = image.shape[:2]
+
+    angle = rng.uniform(-8, 8)
+    scale = rng.uniform(0.92, 1.08)
+    tx = rng.uniform(-0.04, 0.04) * img_w
+    ty = rng.uniform(-0.04, 0.04) * img_h
+
+    matrix = cv2.getRotationMatrix2D((img_w / 2, img_h / 2), angle, scale)
+    matrix[0, 2] += tx
+    matrix[1, 2] += ty
+
+    warped = cv2.warpAffine(image, matrix, (img_w, img_h), borderMode=cv2.BORDER_REPLICATE)
+
+    new_lines = []
+    for line in label_lines:
+        class_id, cx, cy, bw, bh = line.split()
+        cx, cy = float(cx) * img_w, float(cy) * img_h
+        bw, bh = float(bw) * img_w, float(bh) * img_h
+
+        corners = np.array([
+            [cx - bw / 2, cy - bh / 2],
+            [cx + bw / 2, cy - bh / 2],
+            [cx - bw / 2, cy + bh / 2],
+            [cx + bw / 2, cy + bh / 2],
+        ])
+        warped_corners = corners @ matrix[:, :2].T + matrix[:, 2]
+
+        x1, y1 = warped_corners[:, 0].min(), warped_corners[:, 1].min()
+        x2, y2 = warped_corners[:, 0].max(), warped_corners[:, 1].max()
+
+        clipped_x1, clipped_y1 = max(0.0, x1), max(0.0, y1)
+        clipped_x2, clipped_y2 = min(float(img_w), x2), min(float(img_h), y2)
+
+        new_w, new_h = clipped_x2 - clipped_x1, clipped_y2 - clipped_y1
+        if new_w <= 0 or new_h <= 0 or (new_w * new_h) < 0.5 * (bw * bh):
+            continue
+
+        new_cx = (clipped_x1 + clipped_x2) / 2 / img_w
+        new_cy = (clipped_y1 + clipped_y2) / 2 / img_h
+        new_lines.append(
+            f"{class_id} {new_cx:.6f} {new_cy:.6f} {new_w / img_w:.6f} {new_h / img_h:.6f}"
+        )
+
+    return warped, new_lines
+
+
 def make_augmented_copy(image, label_lines: list, rng: np.random.Generator) -> tuple:
     out_image, out_lines = image, label_lines
 
     if rng.random() < 0.5:
         out_image, out_lines = flip_horizontal(out_image, out_lines)
 
+    out_image, out_lines = jitter_geometric(out_image, out_lines, rng)
     out_image = jitter_photometric(out_image, rng)
 
     return out_image, out_lines

@@ -1,0 +1,30 @@
+{
+    "model": "/home/rodrigobatista/PycharmProjects/4ano/2semestre/8_BallPool_ComputerVision/detection_and_retrieval/ball_detection/models/trained/ball_detector_yolo11s_imgsz1280_100epochs.pt",
+    "split": "test",
+    "conf": 0.25,
+    "clustered_threshold": 0.5,
+    "overall": {
+        "gt": 214,
+        "missed": 6,
+        "fp": 3,
+        "miscls": 6,
+        "n_images": 20,
+        "images_with_errors": 3
+    },
+    "clustered": {
+        "gt": 22,
+        "missed": 4,
+        "fp": 2,
+        "miscls": 5,
+        "n_images": 2,
+        "images_with_errors": 2
+    },
+    "non_clustered": {
+        "gt": 192,
+        "missed": 2,
+        "fp": 1,
+        "miscls": 1,
+        "n_images": 18,
+        "images_with_errors": 1
+    }
+}

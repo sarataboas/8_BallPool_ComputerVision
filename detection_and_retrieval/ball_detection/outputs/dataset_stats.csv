@@ -1,0 +1,4 @@
+split,images,Black,Cue,Solid,Striped,total_instances
+train,207,203,205,1068,940,2416
+valid,20,20,20,69,78,187
+test,20,19,20,88,87,214

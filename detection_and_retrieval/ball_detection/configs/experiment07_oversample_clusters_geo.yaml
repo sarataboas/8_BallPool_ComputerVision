@@ -1,0 +1,26 @@
+# Experiment 07 - same as experiment06 (oversample touching-ball train images
+# 3x) but oversample_clustered.py now also applies geometric jitter (small
+# rotation/scale/translation) in addition to flip + photometric jitter, via
+# src/oversample_clustered.py.
+#
+# Why: exp06 (photometric+flip only) improved recall/mAP50-95 overall but
+# the worst case (image 181, the rack) got slightly *more* total errors, not
+# fewer - because all 3 copies were the exact same ball geometry, just
+# recolored. The model had no new spatial arrangement to learn from. This
+# experiment tests whether adding real geometric diversity to the same 26
+# clustered source images closes that gap.
+
+dataset_yaml: configs/data_no_dot_oversampled_clusters_geo.yaml
+
+base_model: models/base/yolo11s.pt
+trained_model: models/trained/ball_detector_yolo11s_imgsz1280_oversampled_clusters_geo.pt
+
+project_dir: runs
+experiment_name: exp07_yolo11s_imgsz1280_oversampled_clusters_geo
+
+epochs: 50
+imgsz: 1280
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5

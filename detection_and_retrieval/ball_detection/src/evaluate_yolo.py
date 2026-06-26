@@ -3,7 +3,7 @@ import argparse
 import json
 import yaml
 
-from ultralytics import YOLO
+from utils import load_detection_model
 
 
 def load_config(config_path: Path) -> dict:
@@ -51,7 +51,7 @@ def evaluate_model(
     if not dataset_yaml.exists():
         raise FileNotFoundError(f"Dataset YAML not found: {dataset_yaml}")
 
-    model = YOLO(str(model_path))
+    model = load_detection_model(model_path)
 
     metrics = model.val(
         data=str(dataset_yaml),

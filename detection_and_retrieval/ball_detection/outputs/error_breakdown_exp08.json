@@ -1,0 +1,30 @@
+{
+    "model": "/home/rodrigobatista/PycharmProjects/4ano/2semestre/8_BallPool_ComputerVision/detection_and_retrieval/ball_detection/models/trained/ball_detector_rtdetr_l_imgsz1280_no_dot.pt",
+    "split": "test",
+    "conf": 0.57,
+    "clustered_threshold": 0.5,
+    "overall": {
+        "gt": 214,
+        "missed": 11,
+        "fp": 9,
+        "miscls": 6,
+        "n_images": 20,
+        "images_with_errors": 10
+    },
+    "clustered": {
+        "gt": 22,
+        "missed": 6,
+        "fp": 1,
+        "miscls": 4,
+        "n_images": 2,
+        "images_with_errors": 2
+    },
+    "non_clustered": {
+        "gt": 192,
+        "missed": 5,
+        "fp": 8,
+        "miscls": 2,
+        "n_images": 18,
+        "images_with_errors": 8
+    }
+}

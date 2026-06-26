@@ -1,0 +1,12 @@
+path: ../../data/8-Ball Pool.v3i.yolov11_no_dot_oversampled_clusters_geo
+
+train: train/images
+val: valid/images
+test: test/images
+
+nc: 4
+names:
+  0: Black
+  1: Cue
+  2: Solid
+  3: Striped

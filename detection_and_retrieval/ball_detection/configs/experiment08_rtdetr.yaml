@@ -1,0 +1,26 @@
+# Experiment 08 - architecture comparison. Same dataset/imgsz/epochs/batch
+# as experiment04 (the current best YOLO model: yolo11s, no Dot class,
+# imgsz 1280) but the base model is RT-DETR-l instead of YOLO. RT-DETR is
+# query-based and NMS-free (one-to-one assignment during training), which is
+# the architectural property most relevant to the touching-ball problem -
+# unlike YOLOv8/v9/v11, which all share the same NMS-based postprocessing we
+# already ruled out as the bottleneck (raising iou_threshold on exp04 only
+# moved errors between buckets, it didn't reduce them).
+#
+# Kept identical to experiment04 on purpose (dataset, imgsz, epochs, batch)
+# so any difference in results is attributable to the architecture change.
+
+dataset_yaml: configs/data_no_dot.yaml
+
+base_model: models/base/rtdetr-l.pt
+trained_model: models/trained/ball_detector_rtdetr_l_imgsz1280_no_dot.pt
+
+project_dir: runs
+experiment_name: exp08_rtdetr_l_imgsz1280_no_dot
+
+epochs: 50
+imgsz: 1280
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5
