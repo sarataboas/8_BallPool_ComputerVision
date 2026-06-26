@@ -31,8 +31,8 @@
         }
     },
     "speed_ms_per_image": {
-        "preprocess": 3.5881882502508233,
-        "inference": 6.56365970025945,
-        "postprocess": 1.734261400088144
+        "preprocess": 5.031356450035673,
+        "inference": 5.107694150001407,
+        "postprocess": 2.8646716000366723
     }
 }

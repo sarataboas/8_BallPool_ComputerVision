@@ -1,0 +1,27 @@
+# Experiment 06 - same as experiment04 (yolo11s, imgsz 1280, no Dot class)
+# but the training images with touching/clustered balls (min_ratio <= 0.5,
+# e.g. racked/break-shot framings) are oversampled 3x with photometric
+# augmentation (horizontal flip + brightness/contrast/saturation/noise
+# jitter), via src/oversample_clustered.py. valid and test are untouched.
+#
+# Why: error_analysis on exp04 showed touching balls still produce
+# missed/misclassified boxes on the test set. Raising the NMS iou_threshold
+# (0.5 -> 0.7) did not reduce total errors, it only moved them between
+# missed/fp/miscls buckets - ruling out NMS suppression as the bottleneck.
+# analyze_clustering.py showed only 26/207 (~12.5%) of train images have a
+# pair this tight, so the model has seen relatively few examples of it.
+
+dataset_yaml: configs/data_no_dot_oversampled_clusters.yaml
+
+base_model: models/base/yolo11s.pt
+trained_model: models/trained/ball_detector_yolo11s_imgsz1280_oversampled_clusters.pt
+
+project_dir: runs
+experiment_name: exp06_yolo11s_imgsz1280_oversampled_clusters
+
+epochs: 50
+imgsz: 1280
+batch: 4
+
+confidence_threshold: 0.25
+iou_threshold: 0.5
